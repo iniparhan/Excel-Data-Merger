@@ -4,6 +4,10 @@
 
 ![Dashboard Preview](assets/dashboard.png)
 
+Link 
+
+https://excel-data-merger-tece.streamlit.app/
+
 ## How To Run in Local?
 
 ### Install library
@@ -20,5 +24,6 @@ pip install -r requirements.txt
 ```
 python -m streamlit run app.py
 ```
+
 
 
