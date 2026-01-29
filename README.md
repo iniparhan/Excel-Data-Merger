@@ -1,1 +1,23 @@
 # Excel-Data-Merger
+
+## How To Use?
+
+![Dashboard Preview](assets/dashboard.png)
+
+## How To Run in Local?
+
+### Install library
+```
+pip install streamlit pandas matplotlib wordcloud
+```
+_OR_
+
+```
+pip install -r requirements.txt
+```
+
+### Run in Terminal
+```
+python -m streamlit run app.py
+```
+
