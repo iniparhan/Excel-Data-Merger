@@ -3,6 +3,7 @@
 ## How To Use?
 
 ![Dashboard Preview](assets/dashboard.png)
+![Dashboard Preview](assets/dashboard.png)
 
 Link 
 
