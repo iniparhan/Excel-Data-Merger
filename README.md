@@ -8,7 +8,7 @@
 
 ### Install library
 ```
-pip install streamlit pandas matplotlib wordcloud
+pip install streamlit pandas matplotlib wordcloud openpyxl
 ```
 _OR_
 
@@ -20,4 +20,5 @@ pip install -r requirements.txt
 ```
 python -m streamlit run app.py
 ```
+
 
