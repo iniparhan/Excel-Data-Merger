@@ -77,22 +77,6 @@ if performance_file:
         performance_df = pd.read_excel(performance_file)
 
         # =========================
-        # FIX MULTIPLE NAME COLUMNS
-        # =========================
-        name_cols = performance_df.filter(regex="^Name")
-
-        if not name_cols.empty:
-            performance_df["Name"] = (
-                name_cols
-                .bfill(axis=1)
-                .iloc[:, 0]
-                .astype(str)
-                .str.strip()
-            )
-
-            performance_df.drop(columns=name_cols.columns, inplace=True)
-
-        # =========================
         # NORMALIZATION
         # =========================
         performance_df["Department"] = (
@@ -102,11 +86,41 @@ if performance_file:
             .str.title()
         )
 
+        # =========================
+        # FIX NAME COLUMN BASED ON DEPARTMENT
+        # =========================
+        department_name_map = {
+            "C-Level": "Name",
+            "Human Resources": "Name 2",
+            "Finance": "Name 3",
+            "Operations": "Name 4",
+            "Marketing Communications": "Name 5"
+        }
+
+        performance_df["Name"] = None
+
+        for dept, col in department_name_map.items():
+            if col in performance_df.columns:
+                performance_df.loc[
+                    performance_df["Department"] == dept,
+                    "Name"
+                ] = performance_df.loc[
+                    performance_df["Department"] == dept,
+                    col
+                ]
+
         performance_df["Name"] = (
             performance_df["Name"]
             .astype(str)
             .str.strip()
         )
+
+        # drop kolom Name lainnya agar bersih
+        drop_cols = [
+            c for c in department_name_map.values()
+            if c in performance_df.columns and c != "Name"
+        ]
+        performance_df.drop(columns=drop_cols, inplace=True)
 
         # =========================
         # TIMESTAMP
@@ -159,7 +173,6 @@ if performance_file:
 
             for topic in officers_topics:
                 for name in names:
-
                     value = None
 
                     if (dept, name) in performance_lookup.index:
@@ -195,13 +208,11 @@ if performance_file:
     # DOWNLOAD
     # =========================
     buffer = BytesIO()
-
     recap_fixed_df.to_excel(
         buffer,
         index=False,
         engine="openpyxl"
     )
-
     buffer.seek(0)
 
     st.download_button(
@@ -221,17 +232,12 @@ if performance_file:
     if wc_column in performance_df.columns:
 
         stopwords = set(STOPWORDS)
-
         stopwords.update([
             "https", "dan", "yang",
             "untuk", "amp", "co",
-            "-", "nya", "lebih", "kita",
-            "dari", "bisa", "di", "juga"
+            "-", "nya", "lebih", "kita", "dari", "bisa", "di", "juga"
         ])
 
-        # =========================
-        # OVERALL WORDCLOUD
-        # =========================
         st.markdown("### Overall Insight")
 
         overall_text = " ".join(
@@ -250,22 +256,16 @@ if performance_file:
         ).generate(overall_text)
 
         fig, ax = plt.subplots(figsize=(14, 6))
-
         ax.imshow(overall_wc, interpolation="bilinear")
         ax.axis("off")
-
         st.pyplot(fig)
 
-        # =========================
-        # PER DEPARTMENT WORDCLOUD
-        # =========================
         st.markdown("### Department Insights")
 
         cols = st.columns(3)
         col_idx = 0
 
         for dept in departments:
-
             dept_df = performance_df[
                 performance_df["Department"] == dept
             ]
@@ -289,13 +289,10 @@ if performance_file:
             ).generate(dept_text)
 
             with cols[col_idx]:
-
                 st.markdown(f"**{dept}**")
-
                 fig, ax = plt.subplots(figsize=(5, 3))
                 ax.imshow(dept_wc, interpolation="bilinear")
                 ax.axis("off")
-
                 st.pyplot(fig)
 
             col_idx = (col_idx + 1) % 3
