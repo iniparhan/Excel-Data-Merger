@@ -73,7 +73,24 @@ performance_file = st.file_uploader(
 # =========================
 if performance_file:
     with st.spinner("Processing performance data..."):
+
         performance_df = pd.read_excel(performance_file)
+
+        # =========================
+        # FIX MULTIPLE NAME COLUMNS
+        # =========================
+        name_cols = performance_df.filter(regex="^Name")
+
+        if not name_cols.empty:
+            performance_df["Name"] = (
+                name_cols
+                .bfill(axis=1)
+                .iloc[:, 0]
+                .astype(str)
+                .str.strip()
+            )
+
+            performance_df.drop(columns=name_cols.columns, inplace=True)
 
         # =========================
         # NORMALIZATION
@@ -142,6 +159,7 @@ if performance_file:
 
             for topic in officers_topics:
                 for name in names:
+
                     value = None
 
                     if (dept, name) in performance_lookup.index:
@@ -149,10 +167,10 @@ if performance_file:
                             value = performance_lookup.loc[(dept, name), topic]
 
                     rows.append([
-                        topic,     # INDICATORS
-                        dept,      # DEPARTMENT
-                        name,      # NAME
-                        value      # MONTH (score)
+                        topic,
+                        dept,
+                        name,
+                        value
                     ])
 
         recap_fixed_df = pd.DataFrame(
@@ -177,11 +195,13 @@ if performance_file:
     # DOWNLOAD
     # =========================
     buffer = BytesIO()
+
     recap_fixed_df.to_excel(
         buffer,
         index=False,
         engine="openpyxl"
     )
+
     buffer.seek(0)
 
     st.download_button(
@@ -201,14 +221,16 @@ if performance_file:
     if wc_column in performance_df.columns:
 
         stopwords = set(STOPWORDS)
+
         stopwords.update([
             "https", "dan", "yang",
             "untuk", "amp", "co",
-            "-", "nya", "lebih", "kita", "dari", "bisa", "di", "juga"
+            "-", "nya", "lebih", "kita",
+            "dari", "bisa", "di", "juga"
         ])
 
         # =========================
-        # OVERALL WORDCLOUD (BIG)
+        # OVERALL WORDCLOUD
         # =========================
         st.markdown("### Overall Insight")
 
@@ -228,8 +250,10 @@ if performance_file:
         ).generate(overall_text)
 
         fig, ax = plt.subplots(figsize=(14, 6))
+
         ax.imshow(overall_wc, interpolation="bilinear")
         ax.axis("off")
+
         st.pyplot(fig)
 
         # =========================
@@ -237,10 +261,11 @@ if performance_file:
         # =========================
         st.markdown("### Department Insights")
 
-        cols = st.columns(3)  # grid layout
+        cols = st.columns(3)
         col_idx = 0
 
         for dept in departments:
+
             dept_df = performance_df[
                 performance_df["Department"] == dept
             ]
@@ -264,17 +289,19 @@ if performance_file:
             ).generate(dept_text)
 
             with cols[col_idx]:
+
                 st.markdown(f"**{dept}**")
+
                 fig, ax = plt.subplots(figsize=(5, 3))
                 ax.imshow(dept_wc, interpolation="bilinear")
                 ax.axis("off")
+
                 st.pyplot(fig)
 
             col_idx = (col_idx + 1) % 3
 
     else:
         st.warning("Kolom WordCloud tidak ditemukan")
-
 
 else:
     st.info("Upload Performance Excel untuk memulai")
