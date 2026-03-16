@@ -97,17 +97,16 @@ if performance_file:
             "Marketing Communications": "Name 5"
         }
 
-        performance_df["Name"] = None
+        if "Name" not in performance_df.columns:
+            performance_df["Name"] = None
 
         for dept, col in department_name_map.items():
             if col in performance_df.columns:
-                performance_df.loc[
-                    performance_df["Department"] == dept,
-                    "Name"
-                ] = performance_df.loc[
-                    performance_df["Department"] == dept,
-                    col
-                ]
+                mask = performance_df["Department"] == dept
+                performance_df.loc[mask, "Name"] = (
+                    performance_df.loc[mask, "Name"]
+                    .combine_first(performance_df.loc[mask, col])
+                )
 
         performance_df["Name"] = (
             performance_df["Name"]
@@ -120,6 +119,7 @@ if performance_file:
             c for c in department_name_map.values()
             if c in performance_df.columns and c != "Name"
         ]
+
         performance_df.drop(columns=drop_cols, inplace=True)
 
         # =========================
@@ -160,6 +160,14 @@ if performance_file:
             ["Department", "Name"]
         )
 
+        performance_lookup.columns = (
+            performance_lookup.columns
+            .astype(str)
+            .str.replace("\n", " ")
+            .str.replace("\t", " ")
+            .str.strip()
+        )
+
         # =========================
         # BUILD RECAP
         # =========================
@@ -167,17 +175,23 @@ if performance_file:
         rows = []
 
         for dept in departments:
-            names = recap_df[
-                recap_df["DEPARTMENT"] == dept
-            ]["NAME"].dropna().tolist()
+
+            names = recap_df.loc[
+                recap_df["DEPARTMENT"] == dept,
+                "NAME"
+            ].dropna().unique()
 
             for topic in officers_topics:
                 for name in names:
+
                     value = None
 
                     if (dept, name) in performance_lookup.index:
-                        if topic in performance_lookup.columns:
-                            value = performance_lookup.loc[(dept, name), topic]
+
+                        row = performance_lookup.loc[(dept, name)]
+
+                        if topic in row.index:
+                            value = row[topic]
 
                     rows.append([
                         topic,
@@ -197,6 +211,9 @@ if performance_file:
         )
 
     st.success("Data merger successfully!!")
+    
+    # Code below is just to check the “performance_lookup” columns are correct.
+    # st.write("Columns performance_lookup:", performance_lookup.columns.tolist())
 
     # =========================
     # PREVIEW
